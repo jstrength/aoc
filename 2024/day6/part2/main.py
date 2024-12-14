@@ -1,6 +1,6 @@
 import copy
 
-lines = open("big_input.txt").readlines()
+lines = open("input.txt").readlines()
 
 grid = []
 
@@ -61,10 +61,18 @@ def run(grid, curr_pos, dir):
 
     return count >= limit
 
+path = []
+new_grid = copy.deepcopy(grid)
+run(new_grid, curr_pos, UP)
+for r in range(len(grid)):
+    for c in range(len(grid[0])):
+        if new_grid[r][c] == "X":
+            path.append((r, c))
+
 distinct_position = 0
 for r in range(len(grid)):
     for c in range(len(grid[0])):
-        if grid[r][c] == ".":
+        if (r,c) in path:
             new_grid = copy.deepcopy(grid)
             new_grid[r][c] = "#"
             if run(new_grid, curr_pos, UP):

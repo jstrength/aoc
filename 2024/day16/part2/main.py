@@ -62,9 +62,6 @@ def d(curr_pos, next_pos):
         return 1001
     return 1
 
-def h(pos):
-    return abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
-
 def print_grid(path):
     os.system('cls' if os.name == 'nt' else 'clear')
     print("\033[%d;%dH" % (0, 1))
@@ -105,21 +102,8 @@ while q:
     #if len(next_list) > 1:
     #    print("FOUND")
     #    print(curr, next_list)
-    #min_scores = []
-    #for next_curr in next_list:
-    #    if next_curr in g_score:
-    #        min_scores += g_score[next_curr]
-    #print(min_scores)
-    #min_score = min(min_scores)
-    #print(min_score)
     for next_curr in next_list:
         found = False
-        #for score in g_score[next_curr]:
-        #    if score == min_score:
-        #        found = True
-        #        break
-        #if not found:
-        #    continue
         q.append(next_curr)
         path.add((next_curr[0], next_curr[1]))
         #print_grid(path)
@@ -133,27 +117,4 @@ while q:
 print(len(path))
 #686 too high
 #592 too low
-
-
-#os.system('cls' if os.name == 'nt' else 'clear')
-exit()
-q = [(goal[0], goal[1], UP), (goal[0], goal[1], DOWN), (goal[0], goal[1], LEFT), (goal[0], goal[1], RIGHT)]
-seen = set()
-path = []
-
-while q:
-    curr = q.pop(0)
-    if curr in seen:
-        continue
-    seen.add(curr)
-    next_list = came_from[curr]
-    if not next_list:
-        continue
-    for next_curr in next_list:
-        q.append(next_curr)
-    path.append((curr[0], curr[1]))
-    print_grid(path)
-
-
-
 

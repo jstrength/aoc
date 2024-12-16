@@ -1,11 +1,17 @@
+import os, time
+
 lines = open('big_input.txt').read()
 
 raw_grid, raw_moves = lines.split('\n\n')
 
+os.system('cls' if os.name == 'nt' else 'clear')
 def print_grid():
+    print("\033[%d;%dH" % (0, 1))
     for row in grid:
         print(''.join(row))
     print()
+    time.sleep(0.001)
+    #os.system('cls' if os.name == 'nt' else 'clear')
 
 grid = [list(grid_row) for grid_row in raw_grid.split('\n')]
 moves = list(filter(lambda x: x != '\n', raw_moves))
@@ -99,12 +105,13 @@ def step(move, curr_pos):
     grid[curr_pos[0]][curr_pos[1]] = curr_char
     return curr_pos
 
-#print_grid()
+print_grid()
 def run(curr_pos):
     for move in moves:
         #print(move)
         curr_pos = step(move, curr_pos)
-        #print_grid()
+        print_grid()
+print_grid()
 
 run(start_pos)
 

@@ -1,0 +1,105 @@
+from collections import defaultdict
+from itertools import combinations
+
+raw_initial_state, raw_initial_gates = open("big_input2.txt").read().split("\n\n")
+
+initial_states = {x.split(': ')[0]: int(x.split(': ')[1]) for x in raw_initial_state.split('\n')}
+
+initial_gates = defaultdict(list)
+for initial_gate in raw_initial_gates.strip().split('\n'):
+    inputs, gate = initial_gate.split(' -> ')
+    initial_gates[tuple(inputs.split(' '))].append(gate)
+
+def run(states, gates):
+    while True:
+        next_gates = {}
+        for gate in gates:
+            l, op, r = gate
+
+            if not (l in states and r in states):
+                next_gates[gate] = gates[gate]
+                continue
+
+            for state in gates[gate]:
+                match op:
+                    case 'AND':
+                        states[state] = states[l] & states[r]
+                    case 'OR':
+                        states[state] = states[l] | states[r]
+                    case 'XOR':
+                        states[state] = states[l] ^ states[r]
+
+        if not next_gates:
+            break
+        if len(next_gates) == len(gates):
+            break
+
+        gates = next_gates
+
+def get_variable(states, var):
+    bits = []
+    for i in range(len(states)):
+        curr = f'{var}{i:02d}'
+        if curr in states:
+            bits.append(states[curr])
+        else:
+            break
+    if bits:
+        return int(''.join(map(str, reversed(bits))), 2)
+    else:
+        return 0
+
+def set_variable(states, var, value):
+    value = '{0:32b}'.format(value)
+    for i in range(len(value)):
+        curr = f'{var}{i:02d}'
+        states[curr] = (value >> i) & 1
+
+def find_bit_diff_idx(a, b):
+    a = '{0:32b}'.format(a)
+    b = '{0:32b}'.format(b)
+    for i in range(len(a)-1, -1, -1):
+        if a[i] != b[i]:
+            return len(a) - 1 - i
+    return -1
+
+y = get_variable(initial_states, 'y')
+x = get_variable(initial_states, 'x')
+print(x, y)
+looking_for = y & x
+print(initial_states)
+
+gates_keys = list(initial_gates.keys())
+combos = list(combinations(gates_keys, 2))
+prev_idx = 0
+
+swapped_wires = []
+
+while True:
+    for a,b in combos:
+        my_states = initial_states.copy()
+        my_gates = initial_gates 
+
+        my_gates[a], my_gates[b] = my_gates[b], my_gates[a]
+
+        run(my_states, my_gates)
+        z = get_variable(my_states, 'z')
+
+        new_idx = find_bit_diff_idx(z, looking_for)
+        #print('idx', new_idx)
+
+        if new_idx <= prev_idx and new_idx != -1:
+            my_gates[a], my_gates[b] = my_gates[b], my_gates[a]
+        else:
+            swapped_wires += my_gates[a] + my_gates[b]
+            print('swapping', new_idx, swapped_wires)
+            prev_idx = new_idx
+            if new_idx != -1:
+                break
+
+        if new_idx == -1:
+            print('found', x, y, z)
+            print(swapped_wires)
+            print(','.join(swapped_wires))
+            exit()
+

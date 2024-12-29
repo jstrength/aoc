@@ -1,0 +1,176 @@
+from collections import defaultdict
+from itertools import combinations
+from copy import deepcopy
+from random import choice
+
+bit_size = 5
+
+raw_initial_state, raw_initial_gates = open("input2.txt").read().split("\n\n")
+
+initial_states = {x.split(': ')[0]: int(x.split(': ')[1]) for x in raw_initial_state.split('\n')}
+
+initial_gates = defaultdict(list)
+for initial_gate in raw_initial_gates.strip().split('\n'):
+    inputs, gate = initial_gate.split(' -> ')
+    initial_gates[tuple(inputs.split(' '))].append(gate)
+
+def run(states, gates):
+    while True:
+        next_gates = {}
+        for gate in gates:
+            l, op, r = gate
+
+            if not (l in states and r in states):
+                next_gates[gate] = gates[gate]
+                continue
+
+            for state in gates[gate]:
+                match op:
+                    case 'AND':
+                        states[state] = states[l] & states[r]
+                    case 'OR':
+                        states[state] = states[l] | states[r]
+                    case 'XOR':
+                        states[state] = states[l] ^ states[r]
+
+        if not next_gates:
+            break
+        if len(next_gates) == len(gates):
+            break
+
+        gates = next_gates
+
+def is_bad_bit_xor(test_bit, gates):
+    my_states = initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 0
+    my_states[f'y{test_bit:02d}'] = 0
+    run(my_states, gates) 
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 0:
+        #print('bad bit found', test_bit)
+        return True
+
+    my_states = initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 1
+    my_states[f'y{test_bit:02d}'] = 1
+    run(my_states, gates)
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 1:
+        #print('bad bit found', test_bit)
+        return True
+
+    my_states = initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 0
+    my_states[f'y{test_bit:02d}'] = 1
+    run(my_states, gates)
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 0:
+        #print('bad bit found', test_bit)
+        return True
+
+    my_states = initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 1
+    my_states[f'y{test_bit:02d}'] = 0
+    run(my_states, gates)
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 0:
+        #print('bad bit found', test_bit)
+        return True
+
+    return False
+
+
+def is_bad_bit(test_bit, gates):
+    my_initial_states = initial_states.copy()
+
+    for i in range(bit_size):
+        my_initial_states[f'x{i:02d}'] = 0
+        my_initial_states[f'y{i:02d}'] = 0
+
+
+    my_states = my_initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 0
+    my_states[f'y{test_bit:02d}'] = 0
+    run(my_states, gates) 
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 0:
+        #print('bad bit found', test_bit)
+        return True
+
+    my_states = my_initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 1
+    my_states[f'y{test_bit:02d}'] = 1
+    run(my_states, gates)
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 0: #or \
+        #f'z{(test_bit+1):02d}' not in my_states or my_states[f'z{(test_bit+1):02d}'] != 1:
+        #print('bad bit found', test_bit)
+        return True
+
+    my_states = my_initial_states.copy()
+
+    my_states[f'x{test_bit:02d}'] = 0
+    my_states[f'y{test_bit:02d}'] = 1
+    run(my_states, gates)
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 1:
+        #print('bad bit found', test_bit)
+        return True
+
+    my_states = my_initial_states.copy()
+    my_states[f'x{test_bit:02d}'] = 1
+    my_states[f'y{test_bit:02d}'] = 0
+    run(my_states, gates)
+    if f'z{test_bit:02d}' not in my_states or my_states[f'z{test_bit:02d}'] != 1:
+        #print('bad bit found', test_bit)
+        return True
+
+    return False
+
+def get_number_bad_bits(gates):
+    count = 0
+    for test_bit in range(bit_size):
+        if is_bad_bit(test_bit, gates):
+            count += 1
+    return count
+
+gates_keys = list(initial_gates.keys())
+combos = list(combinations(gates_keys, 8))
+prev_idx = 0
+curr_num_bad_bits = get_number_bad_bits(initial_gates)
+
+swapped_wires = []
+
+my_states = initial_states.copy()
+my_gates = deepcopy(initial_gates)
+
+while curr_num_bad_bits != 0:
+    for a,b,c,d,e,f,g,h in combos:
+        my_gates = deepcopy(initial_gates)
+        curr_num_bad_bits = get_number_bad_bits(my_gates)
+        swapped_wires = []
+
+        #print(a, b, end='\t')
+
+        my_states = initial_states.copy()
+
+        my_gates[a], my_gates[b] = my_gates[b], my_gates[a]
+        my_gates[c], my_gates[d] = my_gates[d], my_gates[c]
+        my_gates[e], my_gates[f] = my_gates[f], my_gates[e]
+        my_gates[g], my_gates[h] = my_gates[h], my_gates[g]
+
+        run(my_states, my_gates)
+
+        num_bad_bits = get_number_bad_bits(my_gates)
+
+        if num_bad_bits >= curr_num_bad_bits:
+            my_gates[a], my_gates[b] = my_gates[b], my_gates[a]
+            my_gates[c], my_gates[d] = my_gates[d], my_gates[c]
+            my_gates[e], my_gates[f] = my_gates[f], my_gates[e]
+            my_gates[g], my_gates[h] = my_gates[h], my_gates[g]
+        else:
+            print('.', end='', flush=True)
+            if curr_num_bad_bits != num_bad_bits:
+                print(num_bad_bits, end='')
+                curr_num_bad_bits = num_bad_bits
+                swapped_wires += my_gates[a] + my_gates[b]
+            #print('swapping', swapped_wires)
+            if curr_num_bad_bits == 0:
+                break
+
+print(swapped_wires)
+print(','.join(swapped_wires))
+

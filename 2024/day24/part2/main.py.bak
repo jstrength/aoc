@@ -1,0 +1,87 @@
+from collections import defaultdict
+from copy import deepcopy
+from itertools import combinations
+
+raw_initial_state, raw_initial_gates = open("big_input.txt").read().split("\n\n")
+
+initial_states = {x.split(': ')[0]: int(x.split(': ')[1]) for x in raw_initial_state.split('\n')}
+
+initial_gates = defaultdict(list)
+for initial_gate in raw_initial_gates.strip().split('\n'):
+    inputs, gate = initial_gate.split(' -> ')
+    initial_gates[tuple(inputs.split(' '))].append(gate)
+
+def run(states, gates):
+    while True:
+        next_gates = {}
+        for gate in gates:
+            l, op, r = gate
+
+            if not (l in states and r in states):
+                next_gates[gate] = gates[gate]
+                continue
+
+            for state in gates[gate]:
+                match op:
+                    case 'AND':
+                        states[state] = states[l] & states[r]
+                    case 'OR':
+                        states[state] = states[l] | states[r]
+                    case 'XOR':
+                        states[state] = states[l] ^ states[r]
+
+        if not next_gates:
+            break
+        if len(next_gates) == len(gates):
+            break
+
+        gates = next_gates
+
+def get_variable(states, var):
+    bits = []
+    for i in range(len(states)):
+        curr = f'{var}{i:02d}'
+        if curr in states:
+            bits.append(states[curr])
+        else:
+            break
+    if bits:
+        return int(''.join(map(str, reversed(bits))), 2)
+    else:
+        return 0
+
+gates_keys = list(initial_gates.keys())
+combos = list(combinations(gates_keys, 2))
+for a,b in combos:
+    for c,d in combos:
+        if len(set([a,b,c,d])) != 4:
+            continue
+        for e,f in combos:
+            if len(set([a,b,c,d,e,f])) != 6:
+                continue
+            for g,h in combos:
+                if len(set([a,b,c,d,e,f,g,h])) != 8:
+                    continue
+                #print(a, b, c, d, e, f, g, h)
+
+                my_states = deepcopy(initial_states)
+                my_gates = deepcopy(initial_gates)
+
+                my_gates[a], my_gates[b] = my_gates[b], my_gates[a]
+                my_gates[c], my_gates[d] = my_gates[d], my_gates[c]
+                my_gates[e], my_gates[f] = my_gates[f], my_gates[e]
+                my_gates[g], my_gates[h] = my_gates[h], my_gates[g]
+
+                run(my_states, deepcopy(my_gates))
+
+                y = get_variable(my_states, 'y')
+                x = get_variable(my_states, 'x')
+                z = get_variable(my_states, 'z')
+
+                if x + y == z:
+                    print('found', x, y, z)
+                    print((my_gates[a] , my_gates[b]) , (my_gates[c] , my_gates[d]) , (my_gates[e] , my_gates[f]) , (my_gates[g] , my_gates[h]))
+                    swapped_gates = sorted(my_gates[a] + my_gates[b] + my_gates[c] + my_gates[d] + my_gates[e] + my_gates[f] + my_gates[g] + my_gates[h])
+                    print(swapped_gates)
+                    print(','.join(swapped_gates))
+                    exit()
